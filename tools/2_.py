@@ -117,16 +117,17 @@ def call_claude_sonnet(text):
 st.title("💬 犯罪現場生成")
 st.caption("描述犯罪現場")
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+if "session_2" not in st.session_state:
+    st.session_state["session_2"] = {}
+    st.session_state["session_2"]["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
 
-for msg in st.session_state.messages:
+for msg in st.session_state["session_2"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
 
 
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state["session_2"]["messages"].append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
     text_output_from_claude = call_claude_sonnet(prompt)

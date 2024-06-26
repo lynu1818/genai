@@ -89,12 +89,12 @@ def call_claude_sonnet_text(text):
 
 st.title("📝 全能小助手")
 
+if "session_1" not in st.session_state:
+    st.session_state["session_1"] = {}
+    st.session_state["session_1"]["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
 
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
-
-for msg in st.session_state.messages:
+for msg in st.session_state["session_1"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
 # Streamlit file uploader for only for images
@@ -107,7 +107,7 @@ if uploaded_image is not None:
         st.image(uploaded_image)
         base64_string = pil_to_base64(uploaded_image)
         desc_image = call_claude_sonnet_image(base64_string)
-    st.session_state.messages.append({"role": "assistant", "content": desc_image})
+    st.session_state["session_1"].messages.append({"role": "assistant", "content": desc_image})
     st.chat_message("assistant").write(desc_image)
     uploaded_image = None
 
@@ -115,7 +115,7 @@ prompt = speech_to_text(key='my_stt', start_prompt="語音輸入", stop_prompt="
 
 if prompt := st.chat_input() or prompt:
     
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state["session_1"]["messages"].append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
     text_output_from_claude = ""
@@ -127,6 +127,6 @@ if prompt := st.chat_input() or prompt:
         sound_file = BytesIO()
         tts = gTTS(text_output_from_claude, lang='zh', slow=False)
         tts.write_to_fp(sound_file)
-    st.session_state.messages.append({"role": "assistant", "content": text_output_from_claude})
+    st.session_state["session_1"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
     st.chat_message("assistant").write(text_output_from_claude)
     st.audio(sound_file)

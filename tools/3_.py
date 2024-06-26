@@ -121,16 +121,17 @@ def call_claude_sonnet(text):
 st.title("💬 嫌犯人像生成")
 st.caption("描述嫌犯的長相")
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+if "session_3" not in st.session_state:
+    st.session_state["session_3"] = {}
+    st.session_state["session_3"]["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
 
-for msg in st.session_state.messages:
+for msg in st.session_state["session_3"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
 
 
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state["session_3"]["messages"].append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
     base64_output_from_sd = []
