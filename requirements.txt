@@ -1,4 +1,5 @@
 boto3
+replicate
 python-dotenv
 streamlit_mic_recorder
 gtts
