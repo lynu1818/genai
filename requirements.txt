@@ -1,0 +1,5 @@
+boto3
+python-dotenv
+streamlit_mic_recorder
+gtts
+streamlit
