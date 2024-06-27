@@ -94,9 +94,15 @@ if "session_1" not in st.session_state:
 for msg in st.session_state["session_1"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
+
+cols = {}
+columns = st.columns(2)
+for i in range(2):
+    cols[f"col{i}"] = columns[i]
 # Streamlit file uploader for only for images
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-picture = st.camera_input("Take a picture")
+
+uploaded_image = cols["col0"].file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+picture = cols["col1"].camera_input("Take a picture")
 
 
 if uploaded_image is not None:

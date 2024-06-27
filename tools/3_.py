@@ -135,10 +135,9 @@ def convert_base64_to_image(base64_string):
     return img
 
 def convert_pil_to_bytes(image, format='PNG'):
-    # 將 PIL 圖像對象轉換成二進制格式
     byte_io = io.BytesIO()
     image.save(byte_io, format=format)
-    byte_io.seek(0)  # 移動到流的開頭
+    byte_io.seek(0)
     return byte_io.read()
 
 def call_claude_sonnet(text):
@@ -172,7 +171,6 @@ for msg in st.session_state["session_3"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
-
 
     st.session_state["session_3"]["messages"].append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
@@ -208,8 +206,8 @@ if "img_list2" in st.session_state["session_3"]:
                                 st.session_state["session_3"]["img_list2"],
                                 use_container_width=False, key="unique_image_selector_2")
     st.session_state["session_3"]["picked_img"] = selected_image2
-    # 轉換 PIL 圖像到適合下載的二進制數據
-    if isinstance(selected_image2, Image.Image):  # 確認選中的對象是 PIL 圖像
+
+    if isinstance(selected_image2, Image.Image):
         binary_data = convert_pil_to_bytes(selected_image2)
         st.download_button("Download image", binary_data, file_name="download.png")
 
@@ -223,8 +221,3 @@ elif "img_list" in st.session_state["session_3"]:
 
 if "picked_img" in st.session_state["session_3"] and st.session_state["session_3"]["picked_img"]:
     st.image(st.session_state["session_3"]["picked_img"])
-    # for i in range(5):
-    #     st.image(img_output_from_sd[i])
-
-    # st.session_state.messages.append({"role": "assistant", "content": st.image(img_output_from_sd)})
-    # st.chat_message("assistant").write()

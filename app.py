@@ -25,16 +25,19 @@ logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
 #     "reports/alerts.py", title="System alerts", icon=":material/notification_important:"
 # )
 
-search = st.Page("tools/1_.py", title="全能小助手", icon=":material/search:")
-history = st.Page("tools/2_.py", title="犯罪現場生成", icon=":material/history:")
+search = st.Page("tools/1_.py", title="智能助手", icon=":material/search:")
+tool4 = st.Page("tools/4_.py", title="犯罪數據庫", icon=":material/search:")
 tool3 = st.Page("tools/3_.py", title="嫌犯人像生成", icon=":material/history:")
+history = st.Page("tools/2_.py", title="犯罪現場生成", icon=":material/history:")
+
+
 
 if st.session_state.logged_in:
     pg = st.navigation(
         {
             "Account": [logout_page],
             # "Reports": [dashboard, bugs, alerts],
-            "Tools": [search, history, tool3],
+            "Tools": [search, tool4, tool3, history],
         }
     )
 else:

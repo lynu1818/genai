@@ -141,7 +141,3 @@ if prompt := st.chat_input():
     img_output_from_sd.save("image.png")
     st.image(img_output_from_sd)
 
-
-    # msg = "this is the result image"
-    # st.session_state.messages.append({"role": "assistant", "content": msg})
-    # st.chat_message("assistant").write()
