@@ -1,3 +1,5 @@
+# 嫌犯人像生成
+
 import streamlit as st
 import boto3
 import replicate
@@ -7,6 +9,7 @@ import io
 from PIL import Image
 import os
 from dotenv import load_dotenv
+from streamlit_image_select import image_select
 
 # Load the .env file
 load_dotenv()
@@ -86,6 +89,40 @@ def generate_image_sd(text, seed):
     results = response_body.get("artifacts")[0].get("base64")
     return results
 
+
+def sd_update_image(change_prompt, init_image_b64):
+    """
+    Purpose:
+        Uses Bedrock API to generate an Image
+    Args/Requests:
+        text: Prompt
+        style: style for image
+    Return:
+        image: base64 string of image
+    """
+    body = {
+        "text_prompts": ([{"text": change_prompt, "weight": 1.0}]),
+        "cfg_scale": 10,
+        "init_image": init_image_b64,
+        "seed": 0,
+        "start_schedule": 0.6,
+        "steps": 50,
+    }
+
+    body = json.dumps(body)
+
+    modelId = "stability.stable-diffusion-xl-v1"
+    accept = "application/json"
+    contentType = "application/json"
+
+    response = bedrock_runtime.invoke_model(
+        body=body, modelId=modelId, accept=accept, contentType=contentType
+    )
+    response_body = json.loads(response.get("body").read())
+
+    results = response_body.get("artifacts")[0].get("base64")
+    return results
+
 # function to convert PIL image to base64 string
 def pil_to_base64(image, format="png"):
     with io.BytesIO() as buffer:
@@ -97,6 +134,12 @@ def convert_base64_to_image(base64_string):
     img = Image.open(io.BytesIO(img_data))
     return img
 
+def convert_pil_to_bytes(image, format='PNG'):
+    # 將 PIL 圖像對象轉換成二進制格式
+    byte_io = io.BytesIO()
+    image.save(byte_io, format=format)
+    byte_io.seek(0)  # 移動到流的開頭
+    return byte_io.read()
 
 def call_claude_sonnet(text):
     prompt = f"""
@@ -136,19 +179,50 @@ if prompt := st.chat_input():
 
     base64_output_from_sd = []
     img_output_from_sd = []
+    columns = {}
+    selected_image = None
+
 
     with st.spinner("Processing..."):
-        text_output_from_claude = call_claude_sonnet(prompt)
-        print(text_output_from_claude)
-        for i in range(5):
-            base64_output_from_sd.append(generate_image_sd(text_output_from_claude, i))
-            img_output_from_sd.append(convert_base64_to_image(base64_output_from_sd[i]))
-    
-    for i in range(5):
-        st.image(img_output_from_sd[i])
+        if "picked_img" in st.session_state["session_3"]:
+            init_img_b64 = pil_to_base64(st.session_state["session_3"]["picked_img"])
+            updated_img = sd_update_image(change_prompt=st.session_state["session_3"]["last_prompt"] + prompt, init_image_b64=init_img_b64)
+            updated_img = convert_base64_to_image(updated_img)
+            st.session_state["session_3"]["img_list2"] = []
+            st.session_state["session_3"]["img_list2"].append(st.session_state["session_3"]["picked_img"])
+            st.session_state["session_3"]["img_list2"].append(updated_img)
+
+        else:
+            text_output_from_claude = call_claude_sonnet(prompt)
+            print(text_output_from_claude)
+            st.session_state["session_3"]["last_prompt"] = text_output_from_claude
+            for i in range(5):
+                base64_output_from_sd.append(generate_image_sd(text_output_from_claude, i))
+                img_output_from_sd.append(convert_base64_to_image(base64_output_from_sd[i]))
+                if "img_list" not in st.session_state["session_3"]:
+                    st.session_state["session_3"]["img_list"] = []
+                st.session_state["session_3"]["img_list"].append(img_output_from_sd[i])
+
+if "img_list2" in st.session_state["session_3"]:
+    selected_image2 = image_select("Select One", 
+                                st.session_state["session_3"]["img_list2"],
+                                use_container_width=False, key="unique_image_selector_2")
+    st.session_state["session_3"]["picked_img"] = selected_image2
+    # 轉換 PIL 圖像到適合下載的二進制數據
+    if isinstance(selected_image2, Image.Image):  # 確認選中的對象是 PIL 圖像
+        binary_data = convert_pil_to_bytes(selected_image2)
+        st.download_button("Download image", binary_data, file_name="download.png")
+
+elif "img_list" in st.session_state["session_3"]:
+    selected_image = image_select("Select One", 
+                                st.session_state["session_3"]["img_list"],
+                                use_container_width=False, key="unique_image_selector_1")
+    st.session_state["session_3"]["picked_img"] = selected_image
 
 
 
+if "picked_img" in st.session_state["session_3"] and st.session_state["session_3"]["picked_img"]:
+    st.image(st.session_state["session_3"]["picked_img"])
     # for i in range(5):
     #     st.image(img_output_from_sd[i])
 

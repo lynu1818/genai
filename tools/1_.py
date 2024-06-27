@@ -1,3 +1,5 @@
+# 智能助手
+
 import streamlit as st
 import boto3
 import json
@@ -55,7 +57,7 @@ def call_claude_sonnet_image(base64_string):
                             "data": base64_string,
                         },
                     },
-                    {"type": "text", "text": "Provide a caption for this image"},
+                    {"type": "text", "text": "Please create a table and event description based on the photo that includes the following information: time of the event, location, type of incident, and vehicle number."},
                 ],
             }
         ],
@@ -82,12 +84,7 @@ def call_claude_sonnet_text(text):
     return response_body.get("content")[0].get("text")
 
 
-# with st.sidebar:
-#     anthropic_api_key = st.text_input("Anthropic API Key", key="file_qa_api_key", type="password")
-#     "[View the source code](https://github.com/streamlit/llm-examples/blob/main/pages/1_File_Q%26A.py)"
-#     "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)"
-
-st.title("📝 全能小助手")
+st.title("📝 智能助手")
 
 if "session_1" not in st.session_state:
     st.session_state["session_1"] = {}
@@ -99,6 +96,8 @@ for msg in st.session_state["session_1"]["messages"]:
 
 # Streamlit file uploader for only for images
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+picture = st.camera_input("Take a picture")
+
 
 if uploaded_image is not None:
     desc_image = ""
@@ -107,11 +106,23 @@ if uploaded_image is not None:
         st.image(uploaded_image)
         base64_string = pil_to_base64(uploaded_image)
         desc_image = call_claude_sonnet_image(base64_string)
-    st.session_state["session_1"].messages.append({"role": "assistant", "content": desc_image})
+    st.session_state["session_1"]["messages"].append({"role": "assistant", "content": desc_image})
     st.chat_message("assistant").write(desc_image)
     uploaded_image = None
 
+if picture is not None:
+    desc_image = ""
+    with st.spinner("Processing..."):
+        picture = Image.open(picture)
+        st.image(picture)
+        base64_string = pil_to_base64(picture)
+        desc_image = call_claude_sonnet_image(base64_string)
+    st.session_state["session_1"]["messages"].append({"role": "assistant", "content": desc_image})
+    st.chat_message("assistant").write(desc_image)
+    picture = None
+
 prompt = speech_to_text(key='my_stt', start_prompt="語音輸入", stop_prompt="停止錄音")
+
 
 if prompt := st.chat_input() or prompt:
     
