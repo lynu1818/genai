@@ -2,5 +2,6 @@ boto3
 replicate
 python-dotenv
 streamlit_mic_recorder
+streamlit-image-select
 gtts
 streamlit
