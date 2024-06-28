@@ -18,28 +18,6 @@ AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 REGION = os.getenv("REGION")
 
-# List of Stable Diffusion Preset Styles
-sd_presets = [
-    "None",
-    "3d-model",
-    "analog-film",
-    "anime",
-    "cinematic",
-    "comic-book",
-    "digital-art",
-    "enhance",
-    "fantasy-art",
-    "isometric",
-    "line-art",
-    "low-poly",
-    "modeling-compound",
-    "neon-punk",
-    "origami",
-    "photographic",
-    "pixel-art",
-    "tile-texture",
-]
-
 # Initialize AWS clients
 bedrock_agent_runtime = boto3.client(
     service_name="bedrock-agent-runtime",
@@ -170,6 +148,21 @@ if "session_3" not in st.session_state:
 for msg in st.session_state["session_3"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
+
+
+visible = st.toggle("Enable Options")
+options = {"Age": "", "Ethnicity": "", "Gender": "", "Face Shape": "", "Eyes" : "", "Nose": "", "Mouth": "", "Hair Style": ""}
+
+if visible:
+    options["Age"] = st.selectbox("Age", ["Youth (1-18 years)", "Middle-aged (35-55 years)", "Elderly (65-100 years)", ""])
+    options["Gender"] = st.selectbox("Gender", ["male", "female"])
+    options["Ethnicity"] = st.selectbox("Ethnicity", ["East Asian", "South Asian", "African", "Caucasian", "Hispanic"])
+    options["Face Shape"] = st.selectbox("Face Shape", ["Oval", "Square", "Round", "Heart-shaped", "Diamond-shaped"])
+    options["Eyes"] = st.selectbox("Eyes", ["Almond-shaped", "Round", "Narrow", "Hooded", "Deep-set"])
+    options["Nose"] = st.selectbox("Nose", ["Straight", "Aquiline", "Button", "Roman", "Wide"])
+    options["Mouth"] = st.selectbox("Mouth", ["Thin lips", "Full lips", "Wide", "Small", "Heart-shaped"])
+    options["Hair Style"] = st.selectbox("Hair Style", ["Short and straight", "Long and wavy", "Medium-length and curly", "Buzz cut", "Bald"])
+
 if prompt := st.chat_input():
 
     st.session_state["session_3"]["messages"].append({"role": "user", "content": prompt})
@@ -179,7 +172,6 @@ if prompt := st.chat_input():
     img_output_from_sd = []
     columns = {}
     selected_image = None
-
 
     with st.spinner("Processing..."):
         if "picked_img" in st.session_state["session_3"]:
@@ -191,6 +183,9 @@ if prompt := st.chat_input():
             st.session_state["session_3"]["img_list2"].append(updated_img)
 
         else:
+            if visible:
+                for option in options.values():
+                    prompt += " " + option + " "
             text_output_from_claude = call_claude_sonnet(prompt)
             print(text_output_from_claude)
             st.session_state["session_3"]["last_prompt"] = text_output_from_claude
