@@ -2,7 +2,6 @@
 
 import streamlit as st
 import boto3
-import replicate
 import json
 import base64
 import io
@@ -16,28 +15,6 @@ load_dotenv()
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 REGION = os.getenv("REGION")
-
-# List of Stable Diffusion Preset Styles
-sd_presets = [
-    "None",
-    "3d-model",
-    "analog-film",
-    "anime",
-    "cinematic",
-    "comic-book",
-    "digital-art",
-    "enhance",
-    "fantasy-art",
-    "isometric",
-    "line-art",
-    "low-poly",
-    "modeling-compound",
-    "neon-punk",
-    "origami",
-    "photographic",
-    "pixel-art",
-    "tile-texture",
-]
 
 # Initialize AWS clients
 bedrock_agent_runtime = boto3.client(
@@ -74,10 +51,54 @@ def convert_pil_to_bytes(image, format='PNG'):
     return byte_io.read()
 
 def resize_image(image, size=(512, 512)):
-    image = image.resize(size)
-    return image
+    width, height = image.size
 
-def sd_update_image(change_prompt, init_image_b64):
+    ratio = min(size[0] / width, size[1] / height)
+
+    new_width = int(width * ratio)
+    new_height = int(height * ratio)
+
+    new_width = (new_width // 64) * 64
+    new_height = (new_height // 64) * 64
+
+    if new_width == 0:
+        new_width = 64
+    if new_height == 0:
+        new_height = 64
+
+    resized_image = image.resize((new_width, new_height))
+
+    return resized_image
+
+def call_claude_sonnet_image(base64_string):
+    prompt_config = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 4096,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": base64_string,
+                        },
+                    },
+                    {"type": "text", "text": "Please describe the image."},
+                ],
+            }
+        ],
+    }
+    body = json.dumps(prompt_config)
+    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
+    response_body = json.loads(response.get("body").read())
+    print(f'response body: {response_body}')
+    return response_body.get("content")[0].get("text")
+
+
+def sd_update_image(init_prompt, change_prompt, init_image_b64):
     """
     Purpose:
         Uses Bedrock API to generate an Image
@@ -88,9 +109,10 @@ def sd_update_image(change_prompt, init_image_b64):
         image: base64 string of image
     """
     body = {
-        "text_prompts": ([{"text": change_prompt, "weight": 1.0}]),
+        "text_prompts": ([{"text": init_prompt + change_prompt, "weight": 1.0}]),
         "cfg_scale": 10,
         "init_image": init_image_b64,
+        "image_strength": 0.8,
         "seed": 0,
         "start_schedule": 0.6,
         "steps": 50,
@@ -124,17 +146,6 @@ for msg in st.session_state["session_2"]["messages"]:
 
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-# if uploaded_image is not None:
-#     desc_image = ""
-#     with st.spinner("Processing..."):
-#         uploaded_image = Image.open(uploaded_image)
-#         st.image(uploaded_image)
-#         base64_string = pil_to_base64(uploaded_image)
-#         desc_image = call_claude_sonnet_image(base64_string)
-#     st.session_state["session_1"]["messages"].append({"role": "assistant", "content": desc_image})
-#     st.chat_message("assistant").write(desc_image)
-#     uploaded_image = None
-
 updated_img = None
 
 if prompt := st.chat_input():
@@ -149,9 +160,12 @@ if prompt := st.chat_input():
             uploaded_image = Image.open(uploaded_image)
             resized_image = resize_image(uploaded_image)
             init_img_b64 = pil_to_base64(resized_image)
-            updated_img = sd_update_image(prompt, init_image_b64=init_img_b64)
+            text_output_from_claude = call_claude_sonnet_image(init_img_b64)
+            updated_img = sd_update_image(text_output_from_claude, prompt, init_image_b64=init_img_b64)
             updated_img = convert_base64_to_image(updated_img)
         st.image(updated_img)
+        # st.session_state["session_2"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
+        # st.chat_message("assistant").write(text_output_from_claude)
 
 if updated_img is not None and isinstance(updated_img, Image.Image):
     binary_data = convert_pil_to_bytes(updated_img)
