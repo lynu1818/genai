@@ -68,15 +68,26 @@ def call_claude_sonnet_image(base64_string):
     return response_body.get("content")[0].get("text")
 
 # knowledge base
-def call_claude_sonnet_text(text):
-    prompt = f"""
-        your are a professional police officer, answer the following question:
-        {text}
-        """
+def call_claude_sonnet(text, base64_string=""):
+    content = []
+    if base64_string != "":
+        content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": base64_string,
+                        },
+                    })
+    content.append(
+        {"type": "text", "text": prompt}
+    )
     prompt_config = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 4096,
-        "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
+        "messages": [
+            {"role": "user", 
+             "content": content}],
     }
     body = json.dumps(prompt_config)
     response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
@@ -104,29 +115,6 @@ for i in range(2):
 uploaded_image = cols["col0"].file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 picture = cols["col1"].camera_input("Take a picture")
 
-
-if uploaded_image is not None:
-    desc_image = ""
-    with st.spinner("Processing..."):
-        uploaded_image = Image.open(uploaded_image)
-        st.image(uploaded_image)
-        base64_string = pil_to_base64(uploaded_image)
-        desc_image = call_claude_sonnet_image(base64_string)
-    st.session_state["session_1"]["messages"].append({"role": "assistant", "content": desc_image})
-    st.chat_message("assistant").write(desc_image)
-    uploaded_image = None
-
-if picture is not None:
-    desc_image = ""
-    with st.spinner("Processing..."):
-        picture = Image.open(picture)
-        st.image(picture)
-        base64_string = pil_to_base64(picture)
-        desc_image = call_claude_sonnet_image(base64_string)
-    st.session_state["session_1"]["messages"].append({"role": "assistant", "content": desc_image})
-    st.chat_message("assistant").write(desc_image)
-    picture = None
-
 prompt = speech_to_text(key='my_stt', start_prompt="語音輸入", stop_prompt="停止錄音")
 
 
@@ -139,11 +127,24 @@ if prompt := st.chat_input() or prompt:
     sound_file = ""
 
     with st.spinner("Processing..."):
-        text_output_from_claude = call_claude_sonnet_text(prompt)
+        if uploaded_image is not None:
+            uploaded_image = Image.open(uploaded_image)
+            st.image(uploaded_image)
+            base64_string = pil_to_base64(uploaded_image)
+            text_output_from_claude = call_claude_sonnet(prompt, base64_string)
+        elif picture is not None:
+            picture = Image.open(picture)
+            st.image(picture)
+            base64_string = pil_to_base64(picture)
+            text_output_from_claude = call_claude_sonnet(prompt, base64_string)
+        else:
+            text_output_from_claude = call_claude_sonnet(prompt)
         #語音輸出
         sound_file = BytesIO()
         tts = gTTS(text_output_from_claude, lang='zh', slow=False)
         tts.write_to_fp(sound_file)
+    uploaded_image = None
+    picture = None
     st.session_state["session_1"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
     st.chat_message("assistant").write(text_output_from_claude)
     st.audio(sound_file)
