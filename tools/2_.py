@@ -110,9 +110,9 @@ def sd_update_image(init_prompt, change_prompt, init_image_b64):
     """
     body = {
         "text_prompts": ([{"text": init_prompt + change_prompt, "weight": 1.0}]),
-        "cfg_scale": 10,
+        "cfg_scale": 35,
         "init_image": init_image_b64,
-        "image_strength": 0.8,
+        "image_strength": 0.5,
         "seed": 0,
         "start_schedule": 0.6,
         "steps": 50,
