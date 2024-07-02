@@ -11,6 +11,7 @@ import os
 from dotenv import load_dotenv
 from streamlit_mic_recorder import speech_to_text
 from gtts import gTTS
+from datetime import date
 
 # Load the .env file
 load_dotenv()
@@ -63,7 +64,7 @@ def call_claude_sonnet_image(base64_string):
         ],
     }
     body = json.dumps(prompt_config)
-    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
+    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-5-sonnet-20240620-v1:0", accept="application/json", contentType="application/json")
     response_body = json.loads(response.get("body").read())
     return response_body.get("content")[0].get("text")
 
@@ -80,33 +81,42 @@ def call_claude_sonnet(text, base64_string="", from_speech=False):
                         },
                     })
     
+    today = date.today()
+
     if from_speech:
         prompt = f"""
             {text}
             Please create a table and event description based on the above description that includes the following information: time of the event, location, type of incident, and details.
+            using traditional chinese
             using the following example markdown format:
-            - Date: 2024/6/28
-            - Location: No. 2 Zhonghua Road, Hsinchu City
-            - Incident Type: Lost Property
-            - Details: 
-            Citizen XXX reported on June 28, 2024, that they lost a red Giant bicycle and a water bottle near the rear train station. They request police investigation.
+            | Title          | Content                           |
+            | -------------- | --------------------------------- |
+            | 時間            | 2024/6/28                         |
+            | 地點           | No. 2 Zhonghua Road, Hsinchu City |
+            | 案件類型        | Lost Property                     |
+            | 受理內容        | Citizen XXX reported on June 28, 2024, that they lost a red Giant bicycle and a water bottle near the rear train station. They request police investigation.  |
+            
+            today is {today}
             """
     elif text == "":
-        prompt = """Please create a table and event description based on the photo that includes the following information: time of the event, location, type of incident, and vehicle number.
+        prompt = f"""Please create a table and event description based on the photo that includes the following information: time of the event, location, type of incident, and vehicle number.
+            using traditional chinese
             using the following example markdown format:
-            - Date: 2024/6/28
-            - Location: No. 2 Zhonghua Road, Hsinchu City
-            - Incident Type: Repeated illegal parking, despite multiple warnings
-            - Vehicle number: BKK-3887
+            | Title          | Content                           |
+            | -------------- | --------------------------------- |
+            | Date           | 2024/6/28                         |
+            | Location       | No. 2 Zhonghua Road, Hsinchu City |
+            | Incident Type  | Lost Property                     |
+            | Vehicle number | BKK-3887                          |
+            today is {today}
             """
     else:
         prompt = text
 
-
     content.append(
             {"type": "text", "text": prompt}
     )
-    print(prompt)
+    # print(prompt)
     prompt_config = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 4096,
@@ -115,7 +125,7 @@ def call_claude_sonnet(text, base64_string="", from_speech=False):
              "content": content}],
     }
     body = json.dumps(prompt_config)
-    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
+    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-5-sonnet-20240620-v1:0", accept="application/json", contentType="application/json")
     response_body = json.loads(response.get("body").read())
     return response_body.get("content")[0].get("text")
 
@@ -176,7 +186,7 @@ if picture is not None:
     st.audio(sound_file)
 
 
-speech_prompt = speech_to_text(key='my_stt', start_prompt="語音輸入", stop_prompt="停止錄音")
+speech_prompt = speech_to_text(language='zh-tw', key='my_stt', start_prompt="語音輸入", stop_prompt="停止錄音")
 
 
 if prompt := st.chat_input():
@@ -184,30 +194,20 @@ if prompt := st.chat_input():
     st.chat_message("user").write(prompt)
 
     text_output_from_claude = ""
-    sound_file = ""
 
     with st.spinner("Processing..."):
         text_output_from_claude = call_claude_sonnet(prompt, "")
-        #語音輸出
-        sound_file = BytesIO()
-        tts = gTTS(text_output_from_claude, lang='zh', slow=False)
-        tts.write_to_fp(sound_file)
     
     st.session_state["session_1"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
     st.chat_message("assistant").write(text_output_from_claude)
-    st.audio(sound_file)
+
 elif speech_prompt:
     st.session_state["session_1"]["messages"].append({"role": "user", "content": speech_prompt})
     st.chat_message("user").write(speech_prompt)
 
     text_output_from_claude = ""
-    sound_file = ""
+
     with st.spinner("Processing..."):
         text_output_from_claude = call_claude_sonnet(speech_prompt, "", True)
-        #語音輸出
-        sound_file = BytesIO()
-        tts = gTTS(text_output_from_claude, lang='zh', slow=False)
-        tts.write_to_fp(sound_file)
     st.session_state["session_1"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
     st.chat_message("assistant").write(text_output_from_claude)
-    st.audio(sound_file)

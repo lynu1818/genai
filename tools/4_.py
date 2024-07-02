@@ -37,24 +37,19 @@ bedrock_runtime = boto3.client(
 
 
 # knowledge base
-def call_claude_sonnet_text(retrieve_data, question):
-    prompt = f"""
-        As a data analyst, you've been given a dataset based on crime. You will conduct a detailed analysis of the current situation, covering the following aspects:
-        Trend Analysis: Analyze the trend of crime data over time, identifying any significant upward or downward trends.
-        Seasonal Analysis: Examine whether the crime data exhibits clear seasonal variations, such as increases or decreases in crime rates during specific seasons.
-        Cyclic Analysis: Investigate if there are other cyclic patterns in the data, such as variations in crime frequency by week or month.
-        ARIMA Model Prediction: Use the ARIMA model to forecast future crime data, providing estimated crime rates for the upcoming months.
-        Here are the search results in numbered order:
+def call_claude_sonnet_text(retrieve_data, prompt):
+    new_prompt = f"""
+        Here are the search results:
         {retrieve_data}
-        Given the data, answer the question: {question}
-        """
+        using traditional chinese
+        """ + prompt
     prompt_config = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 4096,
-        "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
+        "messages": [{"role": "user", "content": [{"type": "text", "text": new_prompt}]}],
     }
     body = json.dumps(prompt_config)
-    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
+    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-5-sonnet-20240620-v1:0", accept="application/json", contentType="application/json")
     response_body = json.loads(response.get("body").read())
     return response_body.get("content")[0].get("text")
 
@@ -82,42 +77,42 @@ if prompt := st.chat_input():
         retrievalConfiguration={"vectorSearchConfiguration": {"numberOfResults": 100}},
     )
 
-    text_response = bedrock_agent_runtime.retrieve_and_generate(
-        input = {
-            "text": """ 
-            As a data analyst, you've been given a dataset based on crime. You will conduct a detailed analysis of the current situation, covering the following aspects:
+    # text_response = bedrock_agent_runtime.retrieve_and_generate(
+    #     input = {
+    #         "text": """ 
+    #         As a data analyst, you've been given a dataset based on crime. You will conduct a detailed analysis of the current situation, covering the following aspects:
             
-            Peaks and Troughs:
-            Identify the highest and lowest crime data in the dataset along with their corresponding dates.
-            Overall Trend:
-            Describe the overall trend in crime data, noting any significant periodic fluctuations or changes in trend.
-            Statistical Insights:
-            Calculate and provide the average, median, and standard deviation of crime data.
-            Anomalies:
-            Point out any notable high or low outliers, including the dates of these anomalies.
-            Chart Interpretation:
-            Utilize generated data charts and provide interpretations based on these charts.
+    #         Peaks and Troughs:
+    #         Identify the highest and lowest crime data in the dataset along with their corresponding dates.
+    #         Overall Trend:
+    #         Describe the overall trend in crime data, noting any significant periodic fluctuations or changes in trend.
+    #         Statistical Insights:
+    #         Calculate and provide the average, median, and standard deviation of crime data.
+    #         Anomalies:
+    #         Point out any notable high or low outliers, including the dates of these anomalies.
+    #         Chart Interpretation:
+    #         Utilize generated data charts and provide interpretations based on these charts.
         
-            """
-        },
-        retrieveAndGenerateConfiguration={
-        "type": "KNOWLEDGE_BASE",
-        "knowledgeBaseConfiguration": {
-            "knowledgeBaseId": KB_ID,
-            "modelArn": "anthropic.claude-3-sonnet-20240229-v1:0",
-            },
-        },
-    )
+    #         """
+    #     },
+    #     retrieveAndGenerateConfiguration={
+    #     "type": "KNOWLEDGE_BASE",
+    #     "knowledgeBaseConfiguration": {
+    #         "knowledgeBaseId": KB_ID,
+    #         "modelArn": "anthropic.claude-3-sonnet-20240229-v1:0",
+    #         },
+    #     },
+    # )
 
-    print(f"Output:\n{text_response['output']['text']}\n")
+    # print(f"Output:\n{text_response['output']['text']}\n")
 
-    # for data in retrieve_data["retrievalResults"]:
-    #     print(f"Citation:\n{data}\n")
+    for data in retrieve_data["retrievalResults"]:
+        print(f"Citation:\n{data}\n")
 
     text_output_from_claude = ""
 
     with st.spinner("Processing..."):
         text_output_from_claude = call_claude_sonnet_text(retrieve_data, prompt)
 
-    st.session_state["session_4"]["messages"].append({"role": "assistant", "content": text_response['output']['text']})
-    st.chat_message("assistant").write(text_response['output']['text'])
+    st.session_state["session_4"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
+    st.chat_message("assistant").write(text_output_from_claude)

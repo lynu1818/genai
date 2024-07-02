@@ -92,10 +92,38 @@ def call_claude_sonnet_image(base64_string):
         ],
     }
     body = json.dumps(prompt_config)
-    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
+    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-5-sonnet-20240620-v1:0", accept="application/json", contentType="application/json")
     response_body = json.loads(response.get("body").read())
     print(f'response body: {response_body}')
     return response_body.get("content")[0].get("text")
+
+
+def sd_inpaint_image(change_prompt, init_image_b64, mask):
+    body = {
+        "text_prompts": ([{"text": change_prompt, "weight": 1.0}]),
+        "cfg_scale": 15,
+        "init_image": init_image_b64,
+        "mask_source": "MASK_IMAGE_WHITE",
+        "mask_image": pil_to_base64(mask),
+        "seed": 0,
+        "start_schedule": 0.6,
+        "steps": 50,
+    }
+
+    body = json.dumps(body)
+
+    modelId = "stability.stable-diffusion-xl-v1"
+    accept = "application/json"
+    contentType = "application/json"
+
+    response = bedrock_runtime.invoke_model(
+        body=body, modelId=modelId, accept=accept, contentType=contentType
+    )
+    response_body = json.loads(response.get("body").read())
+
+    results = response_body.get("artifacts")[0].get("base64")
+    return results
+
 
 
 def sd_update_image(init_prompt, change_prompt, init_image_b64):
@@ -147,23 +175,44 @@ for msg in st.session_state["session_2"]["messages"]:
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 updated_img = None
+inpainted_image = None
+
 
 if prompt := st.chat_input():
     if uploaded_image is None:
         st.warning("Please upload an image.")
-        
+    
+    elif "last_image" in st.session_state["session_2"]:
+        st.session_state["session_2"]["messages"].append({"role": "user", "content": prompt})
+        st.chat_message("user").write(prompt)
+
+        with st.spinner("Processing..."):
+            init_img_b64 = pil_to_base64(st.session_state["session_2"]["last_image"])
+
+            mask = Image.open("Mask4.png")
+            inpainted_image = sd_inpaint_image(prompt, init_img_b64, mask)
+            inpainted_image = convert_base64_to_image(inpainted_image)
+        st.image(inpainted_image)
+        st.session_state["session_2"]["last_image"] = inpainted_image
     else:
         st.session_state["session_2"]["messages"].append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
         with st.spinner("Processing..."):
             uploaded_image = Image.open(uploaded_image)
-            resized_image = resize_image(uploaded_image)
-            init_img_b64 = pil_to_base64(resized_image)
-            text_output_from_claude = call_claude_sonnet_image(init_img_b64)
-            updated_img = sd_update_image(text_output_from_claude, prompt, init_image_b64=init_img_b64)
-            updated_img = convert_base64_to_image(updated_img)
-        st.image(updated_img)
+            # resized_image = resize_image(uploaded_image)
+
+            init_img_b64 = pil_to_base64(uploaded_image)
+            # text_output_from_claude = call_claude_sonnet_image(init_img_b64)
+            # updated_img = sd_update_image(text_output_from_claude, prompt, init_image_b64=init_img_b64)
+            # updated_img = convert_base64_to_image(updated_img)
+
+            mask = Image.open("Mask2.png")
+            inpainted_image = sd_inpaint_image(prompt, init_img_b64, mask)
+            inpainted_image = convert_base64_to_image(inpainted_image)
+        st.image(inpainted_image)
+        st.session_state["session_2"]["last_image"] = inpainted_image
+        # st.image(updated_img)
         # st.session_state["session_2"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
         # st.chat_message("assistant").write(text_output_from_claude)
 

@@ -35,18 +35,8 @@ bedrock_runtime = boto3.client(
 
 # Bedrock api call to stable diffusion
 def generate_image_sd(text, seed):
-    """
-    Purpose:
-        Uses Bedrock API to generate an Image
-    Args/Requests:
-         text: Prompt
-         style: style for image
-    Return:
-        image: base64 string of image
-    """
     body = {
-        "text_prompts": [{"text": text
-                          }],
+        "text_prompts": [{"text": text}],
         "cfg_scale": 10,
         "seed": seed,
         "steps": 50,
@@ -133,7 +123,7 @@ def call_claude_sonnet(text):
         "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
     }
     body = json.dumps(prompt_config)
-    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0", accept="application/json", contentType="application/json")
+    response = bedrock_runtime.invoke_model(body=body, modelId="anthropic.claude-3-5-sonnet-20240620-v1:0", accept="application/json", contentType="application/json")
     response_body = json.loads(response.get("body").read())
     return response_body.get("content")[0].get("text")
 
