@@ -162,31 +162,31 @@ def sd_update_image(init_prompt, change_prompt, init_image_b64):
 
 
 st.title("💬 犯罪現場生成")
-st.caption("描述犯罪現場")
+# st.caption("描述犯罪現場")
 
 if "session_2" not in st.session_state:
     st.session_state["session_2"] = {}
-    st.session_state["session_2"]["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+    st.session_state["session_2"]["messages"] = [{"role": "assistant", "content": "輸入一張圖片，並給我犯罪顯場的描述，我會協助重現犯罪現場！"}]
 
 for msg in st.session_state["session_2"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
 
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+uploaded_image = st.file_uploader("上傳一張圖片", type=["png", "jpg", "jpeg"])
 
 updated_img = None
 inpainted_image = None
 
 
-if prompt := st.chat_input():
+if prompt := st.chat_input("輸入訊息..."):
     if uploaded_image is None:
-        st.warning("Please upload an image.")
+        st.warning("請上傳一張圖片")
     
     elif "last_image" in st.session_state["session_2"]:
         st.session_state["session_2"]["messages"].append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
-        with st.spinner("Processing..."):
+        with st.spinner("處理中..."):
             init_img_b64 = pil_to_base64(st.session_state["session_2"]["last_image"])
 
             mask = Image.open("Mask4.png")
@@ -198,7 +198,7 @@ if prompt := st.chat_input():
         st.session_state["session_2"]["messages"].append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
-        with st.spinner("Processing..."):
+        with st.spinner("處理中..."):
             uploaded_image = Image.open(uploaded_image)
             # resized_image = resize_image(uploaded_image)
 

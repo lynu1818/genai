@@ -5,17 +5,17 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 def login():
-    if st.button("Log in"):
+    if st.button("登入"):
         st.session_state.logged_in = True
         st.rerun()
 
 def logout():
-    if st.button("Log out"):
+    if st.button("登出"):
         st.session_state.logged_in = False
         st.rerun()
 
-login_page = st.Page(login, title="Log in", icon=":material/login:")
-logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
+login_page = st.Page(login, title="登入", icon=":material/login:")
+logout_page = st.Page(logout, title="登出", icon=":material/logout:")
 
 # dashboard = st.Page(
 #     "reports/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True
@@ -35,9 +35,9 @@ history = st.Page("tools/2_.py", title="犯罪現場生成", icon=":material/his
 if st.session_state.logged_in:
     pg = st.navigation(
         {
-            "Account": [logout_page],
+            "帳號": [logout_page],
             # "Reports": [dashboard, bugs, alerts],
-            "Tools": [search, tool4, tool3, history],
+            "工具": [search, tool4, tool3, history],
         }
     )
 else:

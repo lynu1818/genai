@@ -89,12 +89,13 @@ def call_claude_sonnet(text, base64_string="", from_speech=False):
             Please create a table and event description based on the above description that includes the following information: time of the event, location, type of incident, and details.
             using traditional chinese
             using the following example markdown format:
-            | Title          | Content                           |
+            | 標題          | 內容                           |
             | -------------- | --------------------------------- |
-            | 時間            | 2024/6/28                         |
-            | 地點           | No. 2 Zhonghua Road, Hsinchu City |
-            | 案件類型        | Lost Property                     |
-            | 受理內容        | Citizen XXX reported on June 28, 2024, that they lost a red Giant bicycle and a water bottle near the rear train station. They request police investigation.  |
+            | 報案時間        | 11X年X月X日X時X分 (今日日期)        |
+            | 發生時間        | 11X年X月X日X時X分 (輸入日期)        |
+            | 地點           | 新竹市XX路                         |
+            | 案件類型        | 一般刑案(妨礙自由、妨礙名譽(信用))、車(牌)輛協尋、違反社會秩序維護法、失蹤人口、身分不明、兒少性剝削擅離安置、遺失物、其他案類 |
+            | 受理內容        | 民眾XXX,於11X年X月X日X時X分 (輸入日期),(輸入事件內容)，請求警方偵辦，依規定受理。 |
             
             today is {today}
             """
@@ -102,12 +103,12 @@ def call_claude_sonnet(text, base64_string="", from_speech=False):
         prompt = f"""Please create a table and event description based on the photo that includes the following information: time of the event, location, type of incident, and vehicle number.
             using traditional chinese
             using the following example markdown format:
-            | Title          | Content                           |
+            | 標題          | 內容                          |
             | -------------- | --------------------------------- |
-            | Date           | 2024/6/28                         |
-            | Location       | No. 2 Zhonghua Road, Hsinchu City |
-            | Incident Type  | Lost Property                     |
-            | Vehicle number | BKK-3887                          |
+            | 發生時間        | 11X年X月X日X時X分 (今日日期)                          |
+            | 發生地點       | No. 2 Zhonghua Road, Hsinchu City |
+            | 案件類型      | 違規停車 or 交通事故 or 其他 違反「道路交通管理處罰條例第56條」, 在禁止臨時停車處所停車|
+            | 車號         | BKK-3887                          |
             today is {today}
             """
     else:
@@ -134,7 +135,7 @@ st.title("📝 智能助手")
 
 if "session_1" not in st.session_state:
     st.session_state["session_1"] = {}
-    st.session_state["session_1"]["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+    st.session_state["session_1"]["messages"] = [{"role": "assistant", "content": "輸入圖片/拍張照片/錄音報案/文字輸入報案，我會協助處理日常案件！"}]
 
 
 for msg in st.session_state["session_1"]["messages"]:
@@ -147,14 +148,14 @@ for i in range(2):
     cols[f"col{i}"] = columns[i]
 # Streamlit file uploader for only for images
 
-uploaded_image = cols["col0"].file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-picture = cols["col1"].camera_input("Take a picture")
+uploaded_image = cols["col0"].file_uploader("上傳一張圖片", type=["png", "jpg", "jpeg"])
+picture = cols["col1"].camera_input("拍一張照片")
 
 if uploaded_image is not None:
     uploaded_image = Image.open(uploaded_image)
     st.image(uploaded_image)
     base64_string = pil_to_base64(uploaded_image)
-    with st.spinner("Processing..."):
+    with st.spinner("處理中..."):
         text_output_from_claude = call_claude_sonnet("", base64_string)
 
         sound_file = BytesIO()
@@ -172,7 +173,7 @@ if picture is not None:
     picture = Image.open(picture)
     st.image(picture)
     base64_string = pil_to_base64(picture)
-    with st.spinner("Processing..."):
+    with st.spinner("處理中..."):
         text_output_from_claude = call_claude_sonnet("", base64_string)
 
         sound_file = BytesIO()
@@ -189,13 +190,13 @@ if picture is not None:
 speech_prompt = speech_to_text(language='zh-tw', key='my_stt', start_prompt="語音輸入", stop_prompt="停止錄音")
 
 
-if prompt := st.chat_input():
+if prompt := st.chat_input("輸入訊息..."):
     st.session_state["session_1"]["messages"].append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
     text_output_from_claude = ""
 
-    with st.spinner("Processing..."):
+    with st.spinner("處理中..."):
         text_output_from_claude = call_claude_sonnet(prompt, "")
     
     st.session_state["session_1"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
@@ -207,7 +208,7 @@ elif speech_prompt:
 
     text_output_from_claude = ""
 
-    with st.spinner("Processing..."):
+    with st.spinner("處理中..."):
         text_output_from_claude = call_claude_sonnet(speech_prompt, "", True)
     st.session_state["session_1"]["messages"].append({"role": "assistant", "content": text_output_from_claude})
     st.chat_message("assistant").write(text_output_from_claude)

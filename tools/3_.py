@@ -129,31 +129,31 @@ def call_claude_sonnet(text):
 
 
 st.title("💬 嫌犯人像生成")
-st.caption("描述嫌犯的長相")
+# st.caption("描述嫌犯的長相")
 
 if "session_3" not in st.session_state:
     st.session_state["session_3"] = {}
-    st.session_state["session_3"]["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+    st.session_state["session_3"]["messages"] = [{"role": "assistant", "content": "輸入文字描述，我將生成嫌疑犯的人像！"}]
 
 for msg in st.session_state["session_3"]["messages"]:
     st.chat_message(msg["role"]).write(msg["content"])
 
 
 
-visible = st.toggle("Enable Options")
+visible = st.toggle("顯示選項")
 options = {"Age": "", "Ethnicity": "", "Gender": "", "Face Shape": "", "Eyes" : "", "Nose": "", "Mouth": "", "Hair Style": ""}
 
 if visible:
-    options["Age"] = st.selectbox("Age", ["Youth (1-18 years)", "Middle-aged (35-55 years)", "Elderly (65-100 years)", ""])
-    options["Gender"] = st.selectbox("Gender", ["male", "female"])
-    options["Ethnicity"] = st.selectbox("Ethnicity", ["East Asian", "South Asian", "African", "Caucasian", "Hispanic"])
-    options["Face Shape"] = st.selectbox("Face Shape", ["Oval", "Square", "Round", "Heart-shaped", "Diamond-shaped"])
-    options["Eyes"] = st.selectbox("Eyes", ["Almond-shaped", "Round", "Narrow", "Hooded", "Deep-set"])
-    options["Nose"] = st.selectbox("Nose", ["Straight", "Aquiline", "Button", "Roman", "Wide"])
-    options["Mouth"] = st.selectbox("Mouth", ["Thin lips", "Full lips", "Wide", "Small", "Heart-shaped"])
-    options["Hair Style"] = st.selectbox("Hair Style", ["Short and straight", "Long and wavy", "Medium-length and curly", "Buzz cut", "Bald"])
-
-if prompt := st.chat_input():
+    options["Age"] = st.selectbox("年齡", ["青少年 (1-18 歲)", "青壯年 (19-30 歲)", "中年 (31-64 歲)", "老年 (65-100 歲)", ""])
+    options["Gender"] = st.selectbox("性別", ["男性", "女性", "其他", ""])
+    options["Ethnicity"] = st.selectbox("種族", ["東亞人", "南亞人", "非洲人", "白人", "拉丁美洲人", ""])
+    options["Hair Style"] = st.selectbox("髮型", ["短而直", "長而波浪", "中等長度卷曲", "平頭", "無髮", ""])
+    options["Face Shape"] = st.selectbox("臉型", ["橢圓形", "方形", "圓形", "心形", "鑽石形", ""])
+    options["Eyes"] = st.selectbox("眼睛", ["杏仁形", "圓形", "狹長形", "蒙古褶", "深陷型", ""])
+    options["Nose"] = st.selectbox("鼻子", ["直型", "鷹勾型", "鈕扣型", "羅馬型", "寬型", ""])
+    options["Mouth"] = st.selectbox("嘴巴", ["薄唇", "豐滿唇", "寬唇", "小嘴", "心形唇", ""])
+    
+if prompt := st.chat_input("輸入訊息..."):
 
     st.session_state["session_3"]["messages"].append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
@@ -163,7 +163,7 @@ if prompt := st.chat_input():
     columns = {}
     selected_image = None
 
-    with st.spinner("Processing..."):
+    with st.spinner("處理中..."):
         if "picked_img" in st.session_state["session_3"]:
             init_img_b64 = pil_to_base64(st.session_state["session_3"]["picked_img"])
             updated_img = sd_update_image(change_prompt=st.session_state["session_3"]["last_prompt"] + prompt, init_image_b64=init_img_b64)
