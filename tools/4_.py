@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from streamlit_mic_recorder import speech_to_text
 from gtts import gTTS
 from datetime import date
-import jieba
+# import jieba
 
 # Load the .env file
 load_dotenv()
