@@ -110,12 +110,13 @@ else:
 
 # bar chart1: 最多件案件類別前 12 個月案件數量柱狀圖
 last_12_months_for_chart = df.iloc[-12:, :]
+col2.markdown("**全般刑法月份統計圖**")
 col2.bar_chart(last_12_months_for_chart[[last_month_max_category, '統計期']], y_label=f'{last_month_max_category} 件數', x_label='年分', x='統計期', height=250)
 
 # bar chart2: 今年累積至今各案件類別總數柱狀圖
 current_year = date.today().year
 last_4_months_for_chart = df.iloc[-4:, :]
-
+col2.markdown("**114年1-4月各類案件統計圖**")
 col2.bar_chart(last_4_months_for_chart[categories].sum(), y_label='件數', x_label='案件類別', height=250)
 
 
