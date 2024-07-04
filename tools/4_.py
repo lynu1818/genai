@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from streamlit_mic_recorder import speech_to_text
 from gtts import gTTS
 from datetime import date
+import jieba
 
 # Load the .env file
 load_dotenv()
@@ -21,6 +22,15 @@ AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 REGION = os.getenv("REGION")
 KB_ID = os.getenv("KB_ID")
+analysis_keyword = '數據分析'
+analysis_prompt = '''
+                    請進行數據分析，並詳細條列出來，其中包含:
+                    1. 趨勢分析
+                    2. 季節性分析
+                    3. 周期性分析
+                    4. 異常值分析
+                    5. 預測未來數據
+                    '''
 
 # Initialize AWS clients
 bedrock_agent_runtime = boto3.client(
@@ -41,10 +51,13 @@ bedrock_runtime = boto3.client(
 # knowledge base
 def call_claude_sonnet_text(retrieve_data, prompt):
     new_prompt = f"""
-        Here are the search results:
-        {retrieve_data}
-        using traditional chinese
-        """ + prompt
+            Here are the search results:
+            {retrieve_data}
+            using traditional chinese
+            """ + prompt
+    if analysis_keyword in prompt:
+        new_prompt = new_prompt + analysis_prompt
+    print(new_prompt)
     prompt_config = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": 4096,
