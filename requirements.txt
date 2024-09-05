@@ -5,3 +5,4 @@ streamlit_mic_recorder
 streamlit-image-select
 gtts
 streamlit
+streamlit_drawable_canvas
