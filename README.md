@@ -6,6 +6,8 @@
 
 **警囊妙計** is an AI-powered platform that leverages **Amazon Bedrock** and advanced generative models to offer intelligent assistance across a range of tasks.
 
+![alt text](image.png)
+
 ### Key Features
 
 1. **Suspect Sketch Generation**  
